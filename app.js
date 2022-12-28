@@ -5,7 +5,7 @@ const passport = require("passport");
 const LocalStrategy = require("passport-local")
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-
+const bcrypt = require("bcryptjs")
 
 
 
@@ -32,8 +32,27 @@ app.set("view engine", "ejs");
 app.use(session({ secret: "cats", resave: false, saveUnitialized: true}));
 
 
-passport.use(
+// passport.use(
+//     new LocalStrategy((username, password, done) => {
+//       User.findOne({ username: username }, (err, user) => {
+//         if (err) { 
+//           return done(err);
+//         }
+//         if (!user) {
+//           return done(null, false, { message: "Incorrect username" });
+//         }
+//         if (user.password !== password) {
+//           return done(null, false, { message: "Incorrect password" });
+//         }
+//         return done(null, user);
+//       });
+//     })
+//   );
+
+  passport.use(
     new LocalStrategy((username, password, done) => {
+
+        
       User.findOne({ username: username }, (err, user) => {
         if (err) { 
           return done(err);
@@ -41,13 +60,29 @@ passport.use(
         if (!user) {
           return done(null, false, { message: "Incorrect username" });
         }
-        if (user.password !== password) {
-          return done(null, false, { message: "Incorrect password" });
-        }
-        return done(null, user);
+
+        bcrypt.compare(password, user.password, (err, res) => {
+            if (res) {
+              // passwords match! log user in
+              return done(null, user)
+            } else {
+              // passwords do not match!
+              return done(null, false, { message: "Incorrect password" })
+            }
+          })
+
+
+        // if (user.password !== password) {
+        //   return done(null, false, { message: "Incorrect password" });
+        // }
+        // return done(null, user);
       });
     })
   );
+
+
+
+
 
   passport.serializeUser(function(user, done) {
     done(null, user.id);
@@ -71,16 +106,36 @@ app.get("/", (req, res) => {
 app.get("/sign-up", (req, res) => res.render("sign-up-form"))
 
 app.post("/sign-up", (req, res, next) => {
-    const user = new User ({
-        username: req.body.username,
-        password: req.body.password
-    }).save(err => {
-        if(err){
-            return next(err)
+
+    bcrypt.hash(req.body.password, 10, (err, hashedPassword) => {
+        if(err) {
+            return
         }else{
-            res.redirect("/")
+            const user = new User ({
+                username: req.body.username,
+                password: hashedPassword
+            }).save(err => {
+                if(err){
+                    return next(err)
+                }else{
+                    res.redirect("/")
+                }
+            })
         }
-    })
+        
+        // if err, do something
+        // otherwise, store hashedPassword in DB
+      });
+    // const user = new User ({
+    //     username: req.body.username,
+    //     password: req.body.password
+    // }).save(err => {
+    //     if(err){
+    //         return next(err)
+    //     }else{
+    //         res.redirect("/")
+    //     }
+    // })
 })
 
 app.post(
