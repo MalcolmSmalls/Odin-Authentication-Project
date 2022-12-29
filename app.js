@@ -1,3 +1,6 @@
+require('dotenv').config()
+
+
 const express = require("express");
 const path = require("path");
 const session = require("express-session");
@@ -8,8 +11,7 @@ const Schema = mongoose.Schema;
 const bcrypt = require("bcryptjs")
 
 
-
-const mongoDb = "mongodb+srv://shoot4themoon:Kq4m2iCZDthkMzSZ@cluster0.hmredok.mongodb.net/?retryWrites=true&w=majority"
+const mongoDb = process.env.MONGO
 
 mongoose.connect(mongoDb, { useUnifiedTopology: true, useNewUrlParser: true });
 
